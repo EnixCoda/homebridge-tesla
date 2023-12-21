@@ -1,10 +1,7 @@
 import { CharacteristicValue, Service } from "homebridge";
 import { VehicleData } from "../util/types";
 import { wait } from "../util/wait";
-import {
-  TeslaPluginService,
-  TeslaPluginServiceContext,
-} from "./TeslaPluginService";
+import { TeslaPluginService, TeslaPluginServiceContext } from "./TeslaPluginService";
 
 export class ChargePortService extends TeslaPluginService {
   service: Service;
@@ -13,10 +10,7 @@ export class ChargePortService extends TeslaPluginService {
     super(context);
     const { hap, tesla } = context;
 
-    const service = new hap.Service.LockMechanism(
-      this.serviceName("Charge Port"),
-      "chargePort",
-    );
+    const service = new hap.Service.LockMechanism(this.serviceName("Charge Port"), "chargePort");
 
     const currentState = service
       .getCharacteristic(hap.Characteristic.LockCurrentState)
@@ -39,9 +33,7 @@ export class ChargePortService extends TeslaPluginService {
     const { hap } = this.context;
 
     // Assume locked when not connected.
-    const open = data
-      ? data.charge_state.charge_port_latch === "Disengaged"
-      : false;
+    const open = data ? data.charge_state.charge_port_latch === "Disengaged" : false;
 
     return open
       ? hap.Characteristic.LockCurrentState.UNSECURED

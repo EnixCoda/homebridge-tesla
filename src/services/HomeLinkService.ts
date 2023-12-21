@@ -1,10 +1,7 @@
 import { CharacteristicValue, Service } from "homebridge";
 import { VehicleData } from "../util/types";
 import { wait } from "../util/wait";
-import {
-  TeslaPluginService,
-  TeslaPluginServiceContext,
-} from "./TeslaPluginService";
+import { TeslaPluginService, TeslaPluginServiceContext } from "./TeslaPluginService";
 
 export class HomeLinkService extends TeslaPluginService {
   service: Service;
@@ -13,10 +10,7 @@ export class HomeLinkService extends TeslaPluginService {
     super(context);
     const { hap, tesla } = context;
 
-    const service = new hap.Service.GarageDoorOpener(
-      this.serviceName("HomeLink"),
-      "homeLink",
-    );
+    const service = new hap.Service.GarageDoorOpener(this.serviceName("HomeLink"), "homeLink");
 
     const currentState = service
       .getCharacteristic(hap.Characteristic.CurrentDoorState)
@@ -61,12 +55,7 @@ export class HomeLinkService extends TeslaPluginService {
       // This will only succeed if the car is already online and within proximity to the
       // latitude and longitude settings.
       if (data.vehicle_state.homelink_nearby) {
-        const results = await tesla.api(
-          "homelink",
-          options,
-          latitude,
-          longitude,
-        );
+        const results = await tesla.api("homelink", options, latitude, longitude);
         log("HomeLink activated: ", results.result);
       } else {
         log("HomeLink not available; vehicle reports not nearby.");

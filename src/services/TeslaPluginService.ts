@@ -42,9 +42,7 @@ export abstract class TeslaPluginService {
   // Typesafe callbackify.
   //
 
-  protected createGetter<T extends CharacteristicValue>(
-    getter: Getter<T>,
-  ): GetterCallback {
+  protected createGetter<T extends CharacteristicValue>(getter: Getter<T>): GetterCallback {
     return (callback) => {
       this.context.tesla
         .getVehicleData()
@@ -54,9 +52,7 @@ export abstract class TeslaPluginService {
     };
   }
 
-  protected createSetter<T extends CharacteristicValue>(
-    setter: Setter<T>,
-  ): SetterCallback {
+  protected createSetter<T extends CharacteristicValue>(setter: Setter<T>): SetterCallback {
     return (value, callback) => {
       setter
         .call(this, value as T)
@@ -73,10 +69,7 @@ type Getter<T extends CharacteristicValue> = (
 
 type GetterCallback = (callback: CharacteristicGetCallback) => void;
 
-type Setter<T extends CharacteristicValue> = (
-  this: any,
-  value: T,
-) => Promise<Nullable<T> | void>;
+type Setter<T extends CharacteristicValue> = (this: any, value: T) => Promise<Nullable<T> | void>;
 
 type SetterCallback = (
   value: CharacteristicValue,

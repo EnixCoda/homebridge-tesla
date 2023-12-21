@@ -36,9 +36,7 @@ export class TeslaApi extends EventEmitter<TeslaApiEvents> {
     this.config = config;
   }
 
-  getOptions = async ({
-    ignoreCache,
-  }: { ignoreCache?: boolean } = {}): Promise<TeslaJSOptions> => {
+  getOptions = async ({ ignoreCache }: { ignoreCache?: boolean } = {}): Promise<TeslaJSOptions> => {
     // Use a mutex to prevent multiple logins happening in parallel.
     const unlock = await lock("getOptions", 20_000);
 
@@ -221,9 +219,7 @@ export class TeslaApi extends EventEmitter<TeslaApiEvents> {
         }
 
         this.log(
-          `Vehicle is not online; using ${
-            this.lastVehicleData ? "last known" : "default"
-          } state.`,
+          `Vehicle is not online; using ${this.lastVehicleData ? "last known" : "default"} state.`,
         );
 
         // Set the last update time to now to prevent spamming the logs with the
@@ -235,11 +231,7 @@ export class TeslaApi extends EventEmitter<TeslaApiEvents> {
       }
 
       // Get the latest data from Tesla.
-      this.log(
-        `Getting latest vehicle data from Tesla${
-          ignoreCache ? " (forced update)" : ""
-        }…`,
-      );
+      this.log(`Getting latest vehicle data from Tesla${ignoreCache ? " (forced update)" : ""}…`);
 
       let data: VehicleData;
 
@@ -273,9 +265,7 @@ export class TeslaApi extends EventEmitter<TeslaApiEvents> {
   /**
    * Wakes up the vehicle,
    */
-  public async wakeAndCommand(
-    func: (options: TeslaJSOptions) => Promise<void>,
-  ) {
+  public async wakeAndCommand(func: (options: TeslaJSOptions) => Promise<void>) {
     this.commandsRunning++;
     let options: TeslaJSOptions;
 
@@ -313,24 +303,14 @@ export class TeslaApi extends EventEmitter<TeslaApiEvents> {
     await Promise.race([promise, wait(5_000)]);
   }
 
-  public async api(
-    name: string,
-    options: TeslaJSOptions,
-    ...args: any[]
-  ): Promise<any> {
+  public async api(name: string, options: TeslaJSOptions, ...args: any[]): Promise<any> {
     try {
       return await teslajs[name + "Async"](options, ...args);
     } catch (error: any) {
       if (error.message === "Error response: 408") {
-        console.log(
-          `Tesla timed out communicating with the vehicle while executing "${name}".`,
-        );
+        console.log(`Tesla timed out communicating with the vehicle while executing "${name}".`);
       } else {
-        console.log(
-          `TeslaJS error while executing "${name}":`,
-          error.message,
-          error,
-        );
+        console.log(`TeslaJS error while executing "${name}":`, error.message, error);
       }
 
       throw error;

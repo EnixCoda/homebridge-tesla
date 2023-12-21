@@ -1,9 +1,6 @@
 import { CharacteristicValue, Service } from "homebridge";
 import { getConfigValue, VehicleData } from "../util/types";
-import {
-  TeslaPluginService,
-  TeslaPluginServiceContext,
-} from "./TeslaPluginService";
+import { TeslaPluginService, TeslaPluginServiceContext } from "./TeslaPluginService";
 
 export class ClimateService extends TeslaPluginService {
   service: Service;
@@ -12,23 +9,18 @@ export class ClimateService extends TeslaPluginService {
     super(context);
     const { config, hap, tesla } = context;
 
-    const service = new hap.Service.Thermostat(
-      this.serviceName("Climate"),
-      "climate",
-    );
+    const service = new hap.Service.Thermostat(this.serviceName("Climate"), "climate");
 
     // Apply desired temp units from config.
-    service
-      .getCharacteristic(hap.Characteristic.TemperatureDisplayUnits)
-      .on("get", (callback) => {
-        const celsius = getConfigValue(config, "celsius");
+    service.getCharacteristic(hap.Characteristic.TemperatureDisplayUnits).on("get", (callback) => {
+      const celsius = getConfigValue(config, "celsius");
 
-        if (celsius) {
-          callback(null, hap.Characteristic.TemperatureDisplayUnits.CELSIUS);
-        } else {
-          callback(null, hap.Characteristic.TemperatureDisplayUnits.FAHRENHEIT);
-        }
-      });
+      if (celsius) {
+        callback(null, hap.Characteristic.TemperatureDisplayUnits.CELSIUS);
+      } else {
+        callback(null, hap.Characteristic.TemperatureDisplayUnits.FAHRENHEIT);
+      }
+    });
 
     const currentState = service
       .getCharacteristic(hap.Characteristic.CurrentHeatingCoolingState)
@@ -84,9 +76,7 @@ export class ClimateService extends TeslaPluginService {
 
     if (currentState === hap.Characteristic.CurrentHeatingCoolingState.HEAT) {
       return hap.Characteristic.TargetHeatingCoolingState.HEAT;
-    } else if (
-      currentState === hap.Characteristic.CurrentHeatingCoolingState.COOL
-    ) {
+    } else if (currentState === hap.Characteristic.CurrentHeatingCoolingState.COOL) {
       return hap.Characteristic.TargetHeatingCoolingState.COOL;
     }
 
@@ -128,9 +118,7 @@ export class ClimateService extends TeslaPluginService {
     const { service, context } = this;
     const { hap } = context;
 
-    const units = service.getCharacteristic(
-      hap.Characteristic.TemperatureDisplayUnits,
-    ).value;
+    const units = service.getCharacteristic(hap.Characteristic.TemperatureDisplayUnits).value;
 
     if (units === hap.Characteristic.TemperatureDisplayUnits.FAHRENHEIT) {
       // Value is always in celsius, so convert to F for display.

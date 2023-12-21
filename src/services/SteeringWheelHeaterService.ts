@@ -1,9 +1,6 @@
 import { Service } from "homebridge";
 import { VehicleData } from "../util/types";
-import {
-  TeslaPluginService,
-  TeslaPluginServiceContext,
-} from "./TeslaPluginService";
+import { TeslaPluginService, TeslaPluginServiceContext } from "./TeslaPluginService";
 
 export class SteeringWheelHeaterService extends TeslaPluginService {
   service: Service;

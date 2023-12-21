@@ -8,10 +8,7 @@ const debug = (...args: any[]) => {
   //console.log(...args);
 };
 
-export async function lock(
-  value: MutexValue,
-  timeout: number,
-): Promise<UnlockFunction | null> {
+export async function lock(value: MutexValue, timeout: number): Promise<UnlockFunction | null> {
   debug(`Locking on ${value}`);
 
   return new Promise((resolve) => {
@@ -57,16 +54,12 @@ export async function lock(
     if (waitList.length === 1) {
       process();
     } else {
-      debug(
-        `${waitList.length - 1} others are processing on ${value}; waiting.`,
-      );
+      debug(`${waitList.length - 1} others are processing on ${value}; waiting.`);
 
       // Wait up to `timeout` milliseconds to be called back before just calling
       // the process function anyway.
       timeoutID = setTimeout(() => {
-        debug(
-          `Timed out waiting for ${value} after ${timeout}ms; processing anyway.`,
-        );
+        debug(`Timed out waiting for ${value} after ${timeout}ms; processing anyway.`);
         process();
       }, timeout);
     }

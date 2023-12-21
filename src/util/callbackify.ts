@@ -1,6 +1,4 @@
-export default function callbackify(
-  func: (...args: any[]) => Promise<any>,
-): any {
+export default function callbackify(func: (...args: any[]) => Promise<any>): any {
   return (...args: any[]) => {
     const onlyArgs: any[] = [];
     let maybeCallback: Function | null = null;

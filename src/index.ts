@@ -14,10 +14,7 @@ import { HomeLinkService } from "./services/HomeLinkService";
 import { SentryModeService } from "./services/SentryModeService";
 import { StarterService } from "./services/StarterService";
 import { SteeringWheelHeaterService } from "./services/SteeringWheelHeaterService";
-import {
-  TeslaPluginService,
-  TeslaPluginServiceContext,
-} from "./services/TeslaPluginService";
+import { TeslaPluginService, TeslaPluginServiceContext } from "./services/TeslaPluginService";
 import { FrontTrunk, RearTrunk, TrunkService } from "./services/TrunkService";
 import { VehicleLockService } from "./services/VehicleLockService";
 import { TeslaApi } from "./util/api";

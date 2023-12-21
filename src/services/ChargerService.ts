@@ -1,9 +1,6 @@
 import { Service } from "homebridge";
 import { VehicleData } from "../util/types";
-import {
-  TeslaPluginService,
-  TeslaPluginServiceContext,
-} from "./TeslaPluginService";
+import { TeslaPluginService, TeslaPluginServiceContext } from "./TeslaPluginService";
 
 export class ChargerService extends TeslaPluginService {
   service: Service;
@@ -12,10 +9,7 @@ export class ChargerService extends TeslaPluginService {
     super(context);
     const { hap, tesla } = context;
 
-    const service = new hap.Service.Switch(
-      this.serviceName("Charger"),
-      "charger",
-    );
+    const service = new hap.Service.Switch(this.serviceName("Charger"), "charger");
 
     const on = service
       .getCharacteristic(hap.Characteristic.On)

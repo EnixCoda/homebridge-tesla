@@ -1,10 +1,7 @@
 import { CharacteristicValue, Service } from "homebridge";
 import { VehicleData } from "../util/types";
 import { wait } from "../util/wait";
-import {
-  TeslaPluginService,
-  TeslaPluginServiceContext,
-} from "./TeslaPluginService";
+import { TeslaPluginService, TeslaPluginServiceContext } from "./TeslaPluginService";
 
 const teslajs = require("teslajs");
 
@@ -36,10 +33,7 @@ export class TrunkService extends TeslaPluginService {
 
     const { hap, tesla } = context;
 
-    const service = new hap.Service.LockMechanism(
-      this.serviceName(trunk.name),
-      trunk.subtype,
-    );
+    const service = new hap.Service.LockMechanism(this.serviceName(trunk.name), trunk.subtype);
 
     const currentState = service
       .getCharacteristic(hap.Characteristic.LockCurrentState)

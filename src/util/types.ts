@@ -2,7 +2,7 @@ import { schema } from "../../config.schema.json";
 
 // Maps the type definition of config.schema.json to an actual TypeScript type.
 export type TeslaPluginConfig = {
-  [key in keyof typeof schema.properties]: typeof schema.properties[key]["default"];
+  [key in keyof typeof schema.properties]: (typeof schema.properties)[key]["default"];
 };
 
 export function getConfigValue<T extends keyof TeslaPluginConfig>(
