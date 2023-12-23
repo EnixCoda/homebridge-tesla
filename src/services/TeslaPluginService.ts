@@ -23,6 +23,28 @@ export abstract class TeslaPluginService {
 
   constructor(protected readonly context: TeslaPluginServiceContext) {}
 
+  bind = <T extends CharacteristicValue>(
+    characteristicKey: keyof HAP["Characteristic"],
+    {
+      getter,
+      setter,
+    }: {
+      getter?: Getter<T>;
+      setter?: Setter<T>;
+    },
+  ) => {
+    const characteristic = this.service.getCharacteristic(
+      this.context.hap.Characteristic[characteristicKey as string],
+    );
+    if (getter) {
+      characteristic.on("get", this.createGetter(getter));
+      this.context.tesla.on("vehicleDataUpdated", async (data) =>
+        characteristic.updateValue(await getter(data)),
+      );
+    }
+    if (setter) characteristic.on("set", this.createSetter(setter));
+  };
+
   getFullName(): string {
     // Optional prefix to prepend to all accessory names.
     const prefix = (this.context.config.prefix ?? "").trim();

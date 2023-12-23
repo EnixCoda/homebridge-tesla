@@ -9,24 +9,16 @@ export class HomeLinkService extends TeslaPluginService {
 
   constructor(context: TeslaPluginServiceContext) {
     super(context);
-    const { hap, tesla } = context;
 
-    const service = new hap.Service.GarageDoorOpener(this.getFullName(), "homeLink");
+    this.service = new context.hap.Service.GarageDoorOpener(this.getFullName(), "homeLink");
 
-    const currentState = service
-      .getCharacteristic(hap.Characteristic.CurrentDoorState)
-      .on("get", this.createGetter(this.getCurrentState));
+    this.bind("CurrentDoorState", {
+      getter: this.getCurrentState,
+    });
 
-    const targetState = service
-      .getCharacteristic(hap.Characteristic.TargetDoorState)
-      .on("get", this.createGetter(this.getTargetState))
-      .on("set", this.createSetter(this.setTargetState));
-
-    this.service = service;
-
-    tesla.on("vehicleDataUpdated", (data) => {
-      currentState.updateValue(this.getCurrentState(data));
-      targetState.updateValue(this.getTargetState(data));
+    this.bind("TargetDoorState", {
+      getter: this.getTargetState,
+      setter: this.setTargetState,
     });
   }
 
@@ -35,7 +27,7 @@ export class HomeLinkService extends TeslaPluginService {
     return hap.Characteristic.CurrentDoorState.CLOSED;
   }
 
-  getTargetState(data: VehicleData | null): CharacteristicValue {
+  getTargetState(data: VehicleData | null): number {
     const { hap } = this.context;
     return hap.Characteristic.TargetDoorState.CLOSED;
   }

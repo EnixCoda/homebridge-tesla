@@ -8,46 +8,34 @@ export class ClimateService extends TeslaPluginService {
 
   constructor(context: TeslaPluginServiceContext) {
     super(context);
-    const { config, hap, tesla } = context;
+    const { hap } = context;
 
-    const service = new hap.Service.Thermostat(this.getFullName(), "climate");
+    this.service = new hap.Service.Thermostat(this.getFullName(), "climate");
 
     // Apply desired temp units from config.
-    service.getCharacteristic(hap.Characteristic.TemperatureDisplayUnits).on("get", (callback) => {
-      const celsius = getConfigValue(config, "celsius");
-
-      if (celsius) {
-        callback(null, hap.Characteristic.TemperatureDisplayUnits.CELSIUS);
-      } else {
-        callback(null, hap.Characteristic.TemperatureDisplayUnits.FAHRENHEIT);
-      }
+    this.bind("TemperatureDisplayUnits", {
+      getter: () =>
+        getConfigValue(context.config, "celsius")
+          ? hap.Characteristic.TemperatureDisplayUnits.CELSIUS
+          : hap.Characteristic.TemperatureDisplayUnits.FAHRENHEIT,
     });
 
-    const currentState = service
-      .getCharacteristic(hap.Characteristic.CurrentHeatingCoolingState)
-      .on("get", this.createGetter(this.getCurrentState));
+    this.bind("CurrentHeatingCoolingState", {
+      getter: this.getCurrentState,
+    });
 
-    const targetState = service
-      .getCharacteristic(hap.Characteristic.TargetHeatingCoolingState)
-      .on("get", this.createGetter(this.getTargetState))
-      .on("set", this.createSetter(this.setTargetState));
+    this.bind("TargetHeatingCoolingState", {
+      getter: this.getTargetState,
+      setter: this.setTargetState,
+    });
 
-    const currentTemperature = service
-      .getCharacteristic(hap.Characteristic.CurrentTemperature)
-      .on("get", this.createGetter(this.getCurrentTemperature));
+    this.bind("CurrentTemperature", {
+      getter: this.getCurrentTemperature,
+    });
 
-    const targetTemperature = service
-      .getCharacteristic(hap.Characteristic.TargetTemperature)
-      .on("get", this.createGetter(this.getTargetTemp))
-      .on("set", this.createSetter(this.setTargetTemp));
-
-    this.service = service;
-
-    tesla.on("vehicleDataUpdated", (data) => {
-      currentState.updateValue(this.getCurrentState(data));
-      targetState.updateValue(this.getTargetState(data));
-      currentTemperature.updateValue(this.getCurrentTemperature(data));
-      targetTemperature.updateValue(this.getTargetTemp(data));
+    this.bind("TargetTemperature", {
+      getter: this.getTargetTemp,
+      setter: this.setTargetTemp,
     });
   }
 
@@ -102,7 +90,7 @@ export class ClimateService extends TeslaPluginService {
     return data?.climate_state.inside_temp ?? 10;
   }
 
-  getTargetTemp(data: VehicleData | null): CharacteristicValue {
+  getTargetTemp(data: VehicleData | null): number {
     return data?.climate_state.driver_temp_setting ?? 10;
   }
 

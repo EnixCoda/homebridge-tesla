@@ -9,24 +9,16 @@ export class VehicleLockService extends TeslaPluginService {
 
   constructor(context: TeslaPluginServiceContext) {
     super(context);
-    const { hap, tesla } = context;
 
-    const service = new hap.Service.LockMechanism(this.getFullName(), "carDoors");
+    this.service = new context.hap.Service.LockMechanism(this.getFullName(), "carDoors");
 
-    const currentState = service
-      .getCharacteristic(hap.Characteristic.LockCurrentState)
-      .on("get", this.createGetter(this.getCurrentState));
+    this.bind("LockCurrentState", {
+      getter: this.getCurrentState,
+    });
 
-    const targetState = service
-      .getCharacteristic(hap.Characteristic.LockTargetState)
-      .on("get", this.createGetter(this.getTargetState))
-      .on("set", this.createSetter(this.setTargetState));
-
-    this.service = service;
-
-    tesla.on("vehicleDataUpdated", (data) => {
-      currentState.updateValue(this.getCurrentState(data));
-      targetState.updateValue(this.getTargetState(data));
+    this.bind("LockTargetState", {
+      getter: this.getTargetState,
+      setter: this.setTargetState,
     });
   }
 
@@ -41,7 +33,7 @@ export class VehicleLockService extends TeslaPluginService {
       : hap.Characteristic.LockCurrentState.UNSECURED;
   }
 
-  getTargetState(data: VehicleData | null): CharacteristicValue {
+  getTargetState(data: VehicleData | null): number {
     const { hap } = this.context;
 
     const currentState = this.getCurrentState(data);

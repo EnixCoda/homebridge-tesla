@@ -8,29 +8,12 @@ export class BatteryService extends TeslaPluginService {
 
   constructor(context: TeslaPluginServiceContext) {
     super(context);
-    const { hap, tesla } = context;
 
-    const service = new hap.Service.BatteryService(this.getFullName(), "battery");
+    this.service = new context.hap.Service.BatteryService(this.getFullName(), "battery");
 
-    const batteryLevel = service
-      .getCharacteristic(hap.Characteristic.BatteryLevel)
-      .on("get", this.createGetter(this.getLevel));
-
-    const chargingState = service
-      .getCharacteristic(hap.Characteristic.ChargingState)
-      .on("get", this.createGetter(this.getChargingState));
-
-    const lowBattery = service
-      .getCharacteristic(hap.Characteristic.StatusLowBattery)
-      .on("get", this.createGetter(this.getLowBattery));
-
-    this.service = service;
-
-    tesla.on("vehicleDataUpdated", (data) => {
-      batteryLevel.updateValue(this.getLevel(data));
-      chargingState.updateValue(this.getChargingState(data));
-      lowBattery.updateValue(this.getLowBattery(data));
-    });
+    this.bind("BatteryLevel", { getter: this.getLevel });
+    this.bind("ChargingState", { getter: this.getChargingState });
+    this.bind("StatusLowBattery", { getter: this.getLowBattery });
   }
 
   getLevel(data: VehicleData | null): number {

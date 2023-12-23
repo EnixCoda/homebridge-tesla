@@ -1,4 +1,4 @@
-import { CharacteristicValue, Service } from "homebridge";
+import { Service } from "homebridge";
 import { VehicleData } from "../util/types";
 import { wait } from "../util/wait";
 import { TeslaPluginService, TeslaPluginServiceContext } from "./TeslaPluginService";
@@ -9,28 +9,20 @@ export class ChargePortService extends TeslaPluginService {
 
   constructor(context: TeslaPluginServiceContext) {
     super(context);
-    const { hap, tesla } = context;
 
-    const service = new hap.Service.LockMechanism(this.getFullName(), "chargePort");
+    this.service = new context.hap.Service.LockMechanism(this.getFullName(), "chargePort");
 
-    const currentState = service
-      .getCharacteristic(hap.Characteristic.LockCurrentState)
-      .on("get", this.createGetter(this.getCurrentState));
+    this.bind("LockCurrentState", {
+      getter: this.getCurrentState,
+    });
 
-    const targetState = service
-      .getCharacteristic(hap.Characteristic.LockTargetState)
-      .on("get", this.createGetter(this.getTargetState))
-      .on("set", this.createSetter(this.setTargetState));
-
-    this.service = service;
-
-    tesla.on("vehicleDataUpdated", (data) => {
-      currentState.updateValue(this.getCurrentState(data));
-      targetState.updateValue(this.getTargetState(data));
+    this.bind("LockTargetState", {
+      getter: this.getTargetState,
+      setter: this.setTargetState,
     });
   }
 
-  getCurrentState(data: VehicleData | null): CharacteristicValue {
+  getCurrentState(data: VehicleData | null): number {
     const { hap } = this.context;
 
     // Assume locked when not connected.
@@ -41,7 +33,7 @@ export class ChargePortService extends TeslaPluginService {
       : hap.Characteristic.LockCurrentState.SECURED;
   }
 
-  getTargetState(data: VehicleData | null): CharacteristicValue {
+  getTargetState(data: VehicleData | null): number {
     const { hap } = this.context;
 
     const currentState = this.getCurrentState(data);

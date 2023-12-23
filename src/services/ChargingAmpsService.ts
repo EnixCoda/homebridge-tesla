@@ -15,23 +15,18 @@ export class ChargingAmpsService extends TeslaPluginService {
 
   constructor(context: TeslaPluginServiceContext) {
     super(context);
-    const { hap, tesla } = context;
 
-    const service = new hap.Service.Lightbulb(this.getFullName(), "chargingAmps");
+    this.service = new context.hap.Service.Lightbulb(this.getFullName(), "chargingAmps");
 
-    const on = service
-      .getCharacteristic(hap.Characteristic.On)
-      .on("get", this.createGetter(this.getOn));
+    this.bind("On", {
+      getter: this.getOn,
+    });
 
-    const brightness = service
-      .addCharacteristic(hap.Characteristic.Brightness)
+    const brightness = this.service
+      .addCharacteristic(this.context.hap.Characteristic.Brightness)
       .on("get", this.createGetter(this.getLevel))
       .on("set", this.createSetter(this.setLevel));
-
-    this.service = service;
-
-    tesla.on("vehicleDataUpdated", (data) => {
-      on.updateValue(this.getOn(data));
+    context.tesla.on("vehicleDataUpdated", (data) => {
       brightness.updateValue(this.getLevel(data));
     });
   }

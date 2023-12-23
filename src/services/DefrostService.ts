@@ -8,19 +8,12 @@ export class DefrostService extends TeslaPluginService {
 
   constructor(context: TeslaPluginServiceContext) {
     super(context);
-    const { hap, tesla } = context;
 
-    const service = new hap.Service.Switch(this.getFullName(), "defrost");
+    this.service = new context.hap.Service.Switch(this.getFullName(), "defrost");
 
-    const on = service
-      .getCharacteristic(hap.Characteristic.On)
-      .on("get", this.createGetter(this.getOn))
-      .on("set", this.createSetter(this.setOn));
-
-    this.service = service;
-
-    tesla.on("vehicleDataUpdated", (data) => {
-      on.updateValue(this.getOn(data));
+    this.bind("On", {
+      getter: this.getOn,
+      setter: this.setOn,
     });
   }
 

@@ -17,21 +17,16 @@ export class ChargeLimitService extends TeslaPluginService {
     super(context);
     const { hap, tesla } = context;
 
-    const service = new hap.Service.Lightbulb(this.getFullName(), "chargeLimit");
+    this.service = new hap.Service.Lightbulb(this.getFullName(), "chargeLimit");
 
-    const on = service
-      .getCharacteristic(hap.Characteristic.On)
-      .on("get", this.createGetter(this.getOn));
+    this.bind("On", { getter: this.getOn });
 
-    const brightness = service
+    const brightness = this.service
       .addCharacteristic(hap.Characteristic.Brightness)
       .on("get", this.createGetter(this.getLevel))
       .on("set", this.createSetter(this.setLevel));
 
-    this.service = service;
-
     tesla.on("vehicleDataUpdated", (data) => {
-      on.updateValue(this.getOn(data));
       brightness.updateValue(this.getLevel(data));
     });
   }
