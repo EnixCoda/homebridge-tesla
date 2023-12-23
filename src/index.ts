@@ -1,5 +1,5 @@
 require("@babel/polyfill");
-import { AccessoryConfig, API, HAP, Logging } from "homebridge";
+import { API, Logging, PlatformAccessory, PlatformConfig } from "homebridge";
 import { BatteryService } from "./services/BatteryService";
 import { ChargeLevelService } from "./services/ChargeLevelService";
 import { ChargeLimitService } from "./services/ChargeLimitService";
@@ -18,104 +18,134 @@ import { TeslaPluginService, TeslaPluginServiceContext } from "./services/TeslaP
 import { FrontTrunk, RearTrunk, TrunkService } from "./services/TrunkService";
 import { VehicleLockService } from "./services/VehicleLockService";
 import { TeslaApi } from "./util/api";
-import { getConfigValue, TeslaPluginConfig } from "./util/types";
+import { TeslaPluginConfig, getConfigValue } from "./util/types";
 
-let hap: HAP;
+const pluginIdentifier = "homebridge-enixcoda-tesla";
+const platformName = "EnixCodaTesla";
 
 export default function (api: API) {
-  hap = api.hap;
-  api.registerAccessory("homebridge-tesla", "Tesla", TeslaAccessory);
-}
+  class TeslaPlatformPlugin {
+    tesla: TeslaApi;
+    context: TeslaPluginServiceContext;
+    accessories: PlatformAccessory[] = [];
 
-class TeslaAccessory {
-  log: Logging;
-  name: string;
-  tesla: TeslaApi;
+    constructor(
+      log: Logging,
+      platformConfig: PlatformConfig,
+      public api: API,
+    ) {
+      const { platform, name, _bridge, ...restConfig } = platformConfig;
+      const teslaPluginConfig = restConfig as TeslaPluginConfig;
+      const tesla = new TeslaApi(log, teslaPluginConfig);
 
-  // Services exposed.
-  services: TeslaPluginService[] = [];
+      this.tesla = tesla;
+      this.context = { log, hap: api.hap, config: teslaPluginConfig, tesla };
 
-  constructor(log: Logging, untypedConfig: AccessoryConfig) {
-    const config: TeslaPluginConfig = untypedConfig as any;
-    const tesla = new TeslaApi(log, config);
+      this.setup(teslaPluginConfig);
 
-    this.log = log;
-    this.name = config.name;
-    this.tesla = tesla;
-    tesla.getVehicleData();
-
-    // Create a new service for each feature.
-    const context: TeslaPluginServiceContext = { log, hap, config, tesla };
-
-    this.services.push(new ConnectionService(context));
-    this.services.push(new BatteryService(context));
-
-    if (getConfigValue(config, "vehicleLock")) {
-      this.services.push(new VehicleLockService(context));
+      tesla.getVehicleData();
     }
 
-    if (getConfigValue(config, "trunk")) {
-      this.services.push(new TrunkService(RearTrunk, context));
+    configureAccessory(accessory: PlatformAccessory) {
+      this.accessories.push(accessory);
     }
 
-    if (getConfigValue(config, "frontTrunk")) {
-      this.services.push(new TrunkService(FrontTrunk, context));
-    }
+    private addAccessory(pluginService: TeslaPluginService) {
+      const accessoryName = pluginService.name;
+      if (accessoryName === null) {
+        throw new Error(`Service name of ${pluginService.constructor.name} is null`);
+      }
+      const uuid = api.hap.uuid.generate([platformName, accessoryName].join("/"));
 
-    if (getConfigValue(config, "climate")) {
-      if (getConfigValue(config, "climateSwitch")) {
-        this.services.push(new ClimateSwitchService(context));
+      // check the accessory was not restored from cache
+      const accessory = this.accessories.find((accessory) => accessory.UUID === uuid);
+      if (accessory) {
+        return accessory;
       } else {
-        this.services.push(new ClimateService(context));
+        // create a new accessory
+        const accessory = new this.api.platformAccessory(accessoryName, uuid);
+        accessory.services.push(pluginService.service);
+
+        // register the accessory
+        this.api.registerPlatformAccessories(pluginIdentifier, platformName, [accessory]);
+        this.accessories.push(accessory);
+        return accessory;
       }
     }
 
-    if (getConfigValue(config, "steeringWheelHeater")) {
-      this.services.push(new SteeringWheelHeaterService(context));
-    }
+    private setup(config: TeslaPluginConfig) {
+      const { api, context } = this;
 
-    if (getConfigValue(config, "chargeLimit")) {
-      this.services.push(new ChargeLimitService(context));
-    }
+      api.on("didFinishLaunching", () => {
+        this.addAccessory(new ConnectionService(context));
+        this.addAccessory(new BatteryService(context));
 
-    if (getConfigValue(config, "chargeLevel")) {
-      this.services.push(new ChargeLevelService(context));
-    }
+        if (getConfigValue(config, "vehicleLock")) {
+          this.addAccessory(new VehicleLockService(context));
+        }
 
-    if (getConfigValue(config, "chargePort")) {
-      this.services.push(new ChargePortService(context));
-    }
+        if (getConfigValue(config, "trunk")) {
+          this.addAccessory(new TrunkService(context, RearTrunk));
+        }
 
-    if (getConfigValue(config, "charger")) {
-      this.services.push(new ChargerService(context));
-    }
+        if (getConfigValue(config, "frontTrunk")) {
+          this.addAccessory(new TrunkService(context, FrontTrunk));
+        }
 
-    if (getConfigValue(config, "chargingAmps")) {
-      this.services.push(new ChargingAmpsService(context));
-    }
+        if (getConfigValue(config, "climate")) {
+          this.addAccessory(
+            getConfigValue(config, "climateSwitch")
+              ? new ClimateSwitchService(context)
+              : new ClimateService(context),
+          );
+        }
 
-    if (getConfigValue(config, "defrost")) {
-      this.services.push(new DefrostService(context));
-    }
+        if (getConfigValue(config, "steeringWheelHeater")) {
+          this.addAccessory(new SteeringWheelHeaterService(context));
+        }
 
-    if (getConfigValue(config, "sentryMode")) {
-      this.services.push(new SentryModeService(context));
-    }
+        if (getConfigValue(config, "chargeLimit")) {
+          this.addAccessory(new ChargeLimitService(context));
+        }
 
-    if (getConfigValue(config, "starter")) {
-      this.services.push(new StarterService(context));
-    }
+        if (getConfigValue(config, "chargeLevel")) {
+          this.addAccessory(new ChargeLevelService(context));
+        }
 
-    if (
-      getConfigValue(config, "homeLink") &&
-      getConfigValue(config, "latitude") &&
-      getConfigValue(config, "longitude")
-    ) {
-      this.services.push(new HomeLinkService(context));
+        if (getConfigValue(config, "chargePort")) {
+          this.addAccessory(new ChargePortService(context));
+        }
+
+        if (getConfigValue(config, "charger")) {
+          this.addAccessory(new ChargerService(context));
+        }
+
+        if (getConfigValue(config, "chargingAmps")) {
+          this.addAccessory(new ChargingAmpsService(context));
+        }
+
+        if (getConfigValue(config, "defrost")) {
+          this.addAccessory(new DefrostService(context));
+        }
+
+        if (getConfigValue(config, "sentryMode")) {
+          this.addAccessory(new SentryModeService(context));
+        }
+
+        if (getConfigValue(config, "starter")) {
+          this.addAccessory(new StarterService(context));
+        }
+
+        if (
+          getConfigValue(config, "homeLink") &&
+          getConfigValue(config, "latitude") &&
+          getConfigValue(config, "longitude")
+        ) {
+          this.addAccessory(new HomeLinkService(context));
+        }
+      });
     }
   }
 
-  getServices() {
-    return this.services.map((service) => service.service);
-  }
+  api.registerPlatform(pluginIdentifier, platformName, TeslaPlatformPlugin);
 }

@@ -1,5 +1,5 @@
 {
-  "name": "homebridge-tesla",
+  "name": "@enixcoda/homebridge-tesla",
   "version": "4.3.5",
   "description": "Tesla support for Homebridge: https://github.com/nfarina/homebridge",
   "license": "ISC",

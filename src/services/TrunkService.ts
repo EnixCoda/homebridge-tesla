@@ -27,7 +27,7 @@ export class TrunkService extends TeslaPluginService {
   trunk: Trunk;
   service: Service;
 
-  constructor(trunk: Trunk, context: TeslaPluginServiceContext) {
+  constructor(context: TeslaPluginServiceContext, trunk: Trunk) {
     super(context);
     this.trunk = trunk;
 

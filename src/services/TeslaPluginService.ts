@@ -20,6 +20,7 @@ export type TeslaPluginServiceContext = {
 export abstract class TeslaPluginService {
   protected context: TeslaPluginServiceContext;
   public abstract service: Service;
+  name: string | null = null;
 
   constructor(context: TeslaPluginServiceContext) {
     this.context = context;
@@ -31,11 +32,9 @@ export abstract class TeslaPluginService {
     // Optional prefix to prepend to all accessory names.
     const prefix = (config.prefix ?? "").trim();
 
-    if (prefix.length > 0) {
-      return `${prefix} ${name}`;
-    } else {
-      return name;
-    }
+    const finalName = prefix.length > 0 ? `${prefix} ${name}` : name;
+    this.name = finalName;
+    return finalName;
   }
 
   //

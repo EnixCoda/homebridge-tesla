@@ -1,6 +1,6 @@
 {
-  "pluginAlias": "Tesla",
-  "pluginType": "accessory",
+  "pluginAlias": "EnixCodaTesla",
+  "pluginType": "platform",
   "schema": {
     "type": "object",
     "properties": {
