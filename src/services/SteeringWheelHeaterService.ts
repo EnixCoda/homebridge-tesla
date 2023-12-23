@@ -3,16 +3,14 @@ import { VehicleData } from "../util/types";
 import { TeslaPluginService, TeslaPluginServiceContext } from "./TeslaPluginService";
 
 export class SteeringWheelHeaterService extends TeslaPluginService {
+  name = "Steering Wheel Heater";
   service: Service;
 
   constructor(context: TeslaPluginServiceContext) {
     super(context);
     const { hap, tesla } = context;
 
-    const service = new hap.Service.Switch(
-      this.serviceName("Steering Wheel Heater"),
-      "steeringWheelHeater",
-    );
+    const service = new hap.Service.Switch(this.getFullName(), "steeringWheelHeater");
 
     const on = service
       .getCharacteristic(hap.Characteristic.On)

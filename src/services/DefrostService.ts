@@ -3,13 +3,14 @@ import { VehicleData } from "../util/types";
 import { TeslaPluginService, TeslaPluginServiceContext } from "./TeslaPluginService";
 
 export class DefrostService extends TeslaPluginService {
+  name = "Defrost";
   service: Service;
 
   constructor(context: TeslaPluginServiceContext) {
     super(context);
     const { hap, tesla } = context;
 
-    const service = new hap.Service.Switch(this.serviceName("Defrost"), "defrost");
+    const service = new hap.Service.Switch(this.getFullName(), "defrost");
 
     const on = service
       .getCharacteristic(hap.Characteristic.On)

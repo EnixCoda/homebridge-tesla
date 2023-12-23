@@ -3,13 +3,14 @@ import { VehicleData } from "../util/types";
 import { TeslaPluginService, TeslaPluginServiceContext } from "./TeslaPluginService";
 
 export class ChargerService extends TeslaPluginService {
+  name = "Charger";
   service: Service;
 
   constructor(context: TeslaPluginServiceContext) {
     super(context);
     const { hap, tesla } = context;
 
-    const service = new hap.Service.Switch(this.serviceName("Charger"), "charger");
+    const service = new hap.Service.Switch(this.getFullName(), "charger");
 
     const on = service
       .getCharacteristic(hap.Characteristic.On)

@@ -3,6 +3,7 @@ import { VehicleData } from "../util/types";
 import { TeslaPluginService, TeslaPluginServiceContext } from "./TeslaPluginService";
 
 export class ChargingAmpsService extends TeslaPluginService {
+  name = "Charging Amps";
   service: Service;
 
   // We need to set charging amps on a delay because the UX in the Home app is
@@ -16,7 +17,7 @@ export class ChargingAmpsService extends TeslaPluginService {
     super(context);
     const { hap, tesla } = context;
 
-    const service = new hap.Service.Lightbulb(this.serviceName("Charging Amps"), "chargingAmps");
+    const service = new hap.Service.Lightbulb(this.getFullName(), "chargingAmps");
 
     const on = service
       .getCharacteristic(hap.Characteristic.On)

@@ -4,12 +4,13 @@ import { TeslaPluginService, TeslaPluginServiceContext } from "./TeslaPluginServ
 
 export class ChargeLevelService extends TeslaPluginService {
   service: Service;
+  name = "Charge Level";
 
   constructor(context: TeslaPluginServiceContext) {
     super(context);
     const { hap, tesla } = context;
 
-    const service = new hap.Service.Lightbulb(this.serviceName("Charge Level"), "chargeLevel");
+    const service = new hap.Service.Lightbulb(this.getFullName(), "chargeLevel");
 
     const on = service
       .getCharacteristic(hap.Characteristic.On)

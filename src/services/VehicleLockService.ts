@@ -4,13 +4,14 @@ import { wait } from "../util/wait";
 import { TeslaPluginService, TeslaPluginServiceContext } from "./TeslaPluginService";
 
 export class VehicleLockService extends TeslaPluginService {
+  name = "Car Doors";
   service: Service;
 
   constructor(context: TeslaPluginServiceContext) {
     super(context);
     const { hap, tesla } = context;
 
-    const service = new hap.Service.LockMechanism(this.serviceName("Car Doors"), "carDoors");
+    const service = new hap.Service.LockMechanism(this.getFullName(), "carDoors");
 
     const currentState = service
       .getCharacteristic(hap.Characteristic.LockCurrentState)

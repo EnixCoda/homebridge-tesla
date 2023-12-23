@@ -1,15 +1,16 @@
 import { CharacteristicValue, Service } from "homebridge";
-import { getConfigValue, VehicleData } from "../util/types";
+import { VehicleData, getConfigValue } from "../util/types";
 import { TeslaPluginService, TeslaPluginServiceContext } from "./TeslaPluginService";
 
 export class ClimateService extends TeslaPluginService {
+  name = "Climate";
   service: Service;
 
   constructor(context: TeslaPluginServiceContext) {
     super(context);
     const { config, hap, tesla } = context;
 
-    const service = new hap.Service.Thermostat(this.serviceName("Climate"), "climate");
+    const service = new hap.Service.Thermostat(this.getFullName(), "climate");
 
     // Apply desired temp units from config.
     service.getCharacteristic(hap.Characteristic.TemperatureDisplayUnits).on("get", (callback) => {

@@ -26,14 +26,16 @@ export const RearTrunk: Trunk = {
 export class TrunkService extends TeslaPluginService {
   trunk: Trunk;
   service: Service;
+  name: string;
 
   constructor(context: TeslaPluginServiceContext, trunk: Trunk) {
     super(context);
     this.trunk = trunk;
+    this.name = trunk.name;
 
     const { hap, tesla } = context;
 
-    const service = new hap.Service.LockMechanism(this.serviceName(trunk.name), trunk.subtype);
+    const service = new hap.Service.LockMechanism(this.getFullName(), trunk.subtype);
 
     const currentState = service
       .getCharacteristic(hap.Characteristic.LockCurrentState)

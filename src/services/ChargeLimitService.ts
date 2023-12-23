@@ -4,6 +4,7 @@ import { TeslaPluginService, TeslaPluginServiceContext } from "./TeslaPluginServ
 
 export class ChargeLimitService extends TeslaPluginService {
   service: Service;
+  name = "Charge Limit";
 
   // We need to set charge limit on a delay because the UX in the Home app is
   // a lightbulb brightness slider that is "realtime" - so we will be told
@@ -16,7 +17,7 @@ export class ChargeLimitService extends TeslaPluginService {
     super(context);
     const { hap, tesla } = context;
 
-    const service = new hap.Service.Lightbulb(this.serviceName("Charge Limit"), "chargeLimit");
+    const service = new hap.Service.Lightbulb(this.getFullName(), "chargeLimit");
 
     const on = service
       .getCharacteristic(hap.Characteristic.On)

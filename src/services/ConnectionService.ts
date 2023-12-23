@@ -2,13 +2,14 @@ import { Service } from "homebridge";
 import { TeslaPluginService, TeslaPluginServiceContext } from "./TeslaPluginService";
 
 export class ConnectionService extends TeslaPluginService {
+  name = "Connection";
   service: Service;
 
   constructor(context: TeslaPluginServiceContext) {
     super(context);
     const { hap } = context;
 
-    const service = new hap.Service.Switch(this.serviceName("Connection"), "connection");
+    const service = new hap.Service.Switch(this.getFullName(), "connection");
 
     service
       .getCharacteristic(hap.Characteristic.On)

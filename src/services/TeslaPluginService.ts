@@ -18,27 +18,19 @@ export type TeslaPluginServiceContext = {
 };
 
 export abstract class TeslaPluginService {
-  protected context: TeslaPluginServiceContext;
-  public abstract service: Service;
-  name: string | null = null;
+  public abstract readonly service: Service;
+  abstract readonly name: string;
 
-  constructor(context: TeslaPluginServiceContext) {
-    this.context = context;
-  }
+  constructor(protected readonly context: TeslaPluginServiceContext) {}
 
-  protected serviceName(name: string): string {
-    const { config } = this.context;
-
+  getFullName(): string {
     // Optional prefix to prepend to all accessory names.
-    const prefix = (config.prefix ?? "").trim();
-
-    const finalName = prefix.length > 0 ? `${prefix} ${name}` : name;
-    this.name = finalName;
-    return finalName;
+    const prefix = (this.context.config.prefix ?? "").trim();
+    return prefix.length > 0 ? `${prefix} ${this.name}` : this.name;
   }
 
   //
-  // Typesafe callbackify.
+  // Type-safe callbackify.
   //
 
   protected createGetter<T extends CharacteristicValue>(getter: Getter<T>): GetterCallback {

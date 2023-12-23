@@ -4,13 +4,14 @@ import { wait } from "../util/wait";
 import { TeslaPluginService, TeslaPluginServiceContext } from "./TeslaPluginService";
 
 export class HomeLinkService extends TeslaPluginService {
+  name = "HomeLink";
   service: Service;
 
   constructor(context: TeslaPluginServiceContext) {
     super(context);
     const { hap, tesla } = context;
 
-    const service = new hap.Service.GarageDoorOpener(this.serviceName("HomeLink"), "homeLink");
+    const service = new hap.Service.GarageDoorOpener(this.getFullName(), "homeLink");
 
     const currentState = service
       .getCharacteristic(hap.Characteristic.CurrentDoorState)
