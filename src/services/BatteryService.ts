@@ -9,7 +9,7 @@ export class BatteryService extends TeslaPluginService {
   constructor(context: TeslaPluginServiceContext) {
     super(context);
 
-    this.service = new context.hap.Service.BatteryService(this.getFullName(), "battery");
+    this.service = new context.hap.Service.Battery(this.getFullName(), "battery");
 
     this.bind("BatteryLevel", { getter: this.getLevel });
     this.bind("ChargingState", { getter: this.getChargingState });
