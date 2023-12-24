@@ -37,12 +37,16 @@ export abstract class TeslaPluginService {
       this.context.hap.Characteristic[characteristicKey as string],
     );
     if (getter) {
-      characteristic.on("get", this.createGetter(getter));
+      const boundGetter = getter.bind(this);
+      characteristic.on("get", this.createGetter(boundGetter));
       this.context.tesla.on("vehicleDataUpdated", async (data) =>
-        characteristic.updateValue(await getter(data)),
+        characteristic.updateValue(await boundGetter(data)),
       );
     }
-    if (setter) characteristic.on("set", this.createSetter(setter));
+    if (setter) {
+      const boundSetter = setter.bind(this);
+      characteristic.on("set", this.createSetter(boundSetter));
+    }
   };
 
   getFullName(): string {
