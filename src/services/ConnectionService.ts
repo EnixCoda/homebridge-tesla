@@ -8,21 +8,18 @@ export class ConnectionService extends TeslaPluginService {
   constructor(context: TeslaPluginServiceContext) {
     super(context);
 
-    this.service = new context.hap.Service.Switch(this.getFullName(), "connection");
+    this.service = new context.hap.Service.Switch(this.getFullName());
 
     this.bind("On", {
       getter: this.getOn,
       setter: this.setOn,
     });
+
+    // TODO: turn off when vehicle goes to sleep
   }
 
   async getOn() {
-    const { tesla } = this.context;
-
-    const { state } = await tesla.getVehicle();
-    const on = state === "online";
-
-    return on;
+    return (await this.context.tesla.getVehicle())?.state === "online";
   }
 
   async setOn(on: boolean) {
@@ -36,7 +33,8 @@ export class ConnectionService extends TeslaPluginService {
       // to update HomeKit with the latest state.
       await tesla.getVehicleData({ ignoreCache: true });
     } else {
-      log("Ignoring request to put vehicle to sleep, we can't do that!");
+      log("Ignoring request to put vehicle to sleep, we can't do that! Reverting to On");
+      this.service.getCharacteristic(this.context.hap.Characteristic.On).updateValue(true);
     }
   }
 }

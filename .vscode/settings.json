@@ -1,10 +1,9 @@
 {
   "editor.formatOnSave": true,
   "[typescript]": {
-    "editor.codeActionsOnSave": [
-      "source.organizeImports"
-    ],
+    "editor.codeActionsOnSave": ["source.organizeImports"]
   },
   "typescript.tsserver.experimental.enableProjectDiagnostics": true,
-  "task.allowAutomaticTasks": "on"
+  "task.allowAutomaticTasks": "on",
+  "typescript.tsdk": "node_modules/typescript/lib"
 }

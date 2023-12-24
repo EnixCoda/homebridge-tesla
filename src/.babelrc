@@ -2,15 +2,19 @@
   "test": ["./**/*.ts", "./**/*.tsx"],
   "presets": [
     [
-      "@babel/env",
+      "@babel/preset-env",
       {
-        "targets": {
-          "node": "4.3.2"
-        },
-        "modules": false
+        "exclude": [
+          "@babel/plugin-transform-regenerator",
+          "@babel/plugin-transform-async-to-generator",
+          "@babel/plugin-proposal-object-rest-spread"
+        ]
       }
     ],
-    "@babel/typescript"
+    "@babel/preset-typescript"
   ],
-  "plugins": ["@babel/proposal-class-properties"]
+  "plugins": [
+    "@babel/proposal-class-properties",
+    ["@babel/plugin-proposal-decorators", { "decoratorsBeforeExport": true }]
+  ]
 }

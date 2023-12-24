@@ -1,96 +1,77 @@
-type MutexValue = any;
-type ProcessFunction = () => void;
+import { Descriptor } from "./Descriptor";
+import { log } from "./log";
+import { wait } from "./wait";
+
+type LockKey = string;
 export type UnlockFunction = () => void;
 
-export const queue: Map<MutexValue, ProcessFunction[]> = new Map();
+const locks: Map<LockKey, Promise<void>> = new Map();
 
-const debug = (...args: any[]) => {
-  //console.log(...args);
-};
-
-const lockFn =
-  <Args extends any[], R>(key: string, timeout: number, fn: (...args: Args) => R) =>
-  async (...args: Args) => {
-    const unlock = await lock(key, timeout);
-
-    if (!unlock) throw new Error(`Failed to acquire lock for "${key}"`);
+const lockFn = <Args extends any[], R>(key: string, timeout: number, fn: (...args: Args) => R) => {
+  const wrapped = async function <T>(this: T, ...args: Args) {
+    const unlock = await acquireLockWithinTime(key, timeout);
 
     try {
-      return fn(...args);
+      return fn.call(this, ...args);
     } finally {
       unlock();
     }
   };
+  Object.defineProperty(wrapped, "name", { value: `locked(${key})` });
 
-export const withLock = (key: string, timeout: number) => (target: any, propertyKey: string) => {
-  const method = target[propertyKey];
-  target[propertyKey] = lockFn(key, timeout, method);
+  return wrapped;
 };
 
-export async function lock(value: MutexValue, timeout: number): Promise<UnlockFunction | null> {
-  debug(`Locking on ${value}`);
+export const withLock =
+  (key: string, timeout: number) =>
+  (...args: any[]) => {
+    const descriptor = args[0] as Descriptor<any>;
+    log?.debug(`[with lock]`, `Decorating "${descriptor.key}"`);
 
-  return new Promise((resolve) => {
-    let timeoutID;
+    const method = descriptor.descriptor.value;
+    descriptor.descriptor.value = lockFn(key, timeout, method);
+  };
 
-    // Get either the existing wait list or a new one.
-    const waitList: ProcessFunction[] = queue.get(value) || [];
-    queue.set(value, waitList);
+let count = 0;
+async function acquireLockWithinTime(lockKey: LockKey, timeout: number): Promise<UnlockFunction> {
+  const $count = ++count;
+  log.debug(`[Lock]`, lockKey, $count, `Locking`);
 
-    // Create our processing callback. This will be called when it's our turn
-    // to own the mutex.
-    const process: ProcessFunction = () => {
-      // Erase any pending timeouts.
-      timeoutID && clearTimeout(timeoutID);
+  const lastLock = locks.get(lockKey);
 
-      // We may have accumulated process functions that never got called before
-      // us. So remove anything before us that should be done already.
-      removeUpTo(waitList, process);
-
-      const unlock = () => {
-        debug(`Unlocking on ${value}`);
-        // Remove all process functions up to and including ourselves, then
-        // call the next one if necessary.
-        removeUpToAndIncluding(waitList, process);
-
-        const nextProcess = waitList[0];
-        if (nextProcess) {
-          debug(`Calling next process waiting on ${value}`);
-          nextProcess();
-        } else {
-          // Delete the wait list entire for this value to save memory.
-          queue.delete(value);
-        }
-      };
-
-      resolve(unlock);
-    };
-
-    // Add ourself to the list.
-    waitList.push(process);
-
-    // If we are the only thing on this list, we can process immediately.
-    if (waitList.length === 1) {
-      process();
-    } else {
-      debug(`${waitList.length - 1} others are processing on ${value}; waiting.`);
-
-      // Wait up to `timeout` milliseconds to be called back before just calling
-      // the process function anyway.
-      timeoutID = setTimeout(() => {
-        debug(`Timed out waiting for ${value} after ${timeout}ms; processing anyway.`);
-        process();
-      }, timeout);
-    }
+  let resolve: (value: void) => void;
+  const lock = new Promise<void>((res) => {
+    resolve = res;
   });
-}
+  locks.set(lockKey, lock);
 
-function removeUpTo<T>(array: T[], target: T) {
-  const index = array.indexOf(target);
-  index >= 0 && array.splice(0, index);
-}
+  if (lastLock) {
+    let lastLockResolved = false;
+    await Promise.race([
+      wait(timeout).then(() => {
+        if (lastLockResolved) return;
 
-function removeUpToAndIncluding<T>(array: T[], target: T) {
-  const index = array.indexOf(target);
-  index >= 0 && array.splice(0, index + 1);
+        log.debug(`[Lock]`, lockKey, $count, `Timed out`);
+        unlock(); // force unlocking not acquired lock so that the next pending acquirement can acquire the lock
+        throw new Error("Timed out waiting for lock");
+      }),
+      lastLock.then(() => {
+        lastLockResolved = true;
+      }),
+    ]).then(() => {
+      log.debug(`[Lock]`, lockKey, $count, `Released`);
+    });
+  }
+
+  log.debug(`[Lock]`, lockKey, $count, `Acquired`);
+
+  const unlock = () => {
+    log.debug(`[Lock]`, lockKey, $count, `Unlocking`);
+    if (locks.get(lockKey) === lock) {
+      log.debug(`[Lock]`, lockKey, $count, `Lock is the last one`);
+    }
+    resolve(undefined);
+  };
+
+  return unlock;
 }

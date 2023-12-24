@@ -19,9 +19,6 @@ export default {
       extensions,
       exclude: "node_modules/**", // only transpile our source code
       babelHelpers: "bundled",
-      plugins: [
-        ['@babel/plugin-proposal-decorators', { decoratorsBeforeExport: true }],
-      ]
     }),
     json(),
   ],

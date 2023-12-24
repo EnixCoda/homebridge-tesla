@@ -14,11 +14,13 @@ export class VehicleLockService extends TeslaPluginService {
 
     this.bind("LockCurrentState", {
       getter: this.getCurrentState,
+      fallbackValue: true,
     });
 
     this.bind("LockTargetState", {
       getter: this.getTargetState,
       setter: this.setTargetState,
+      fallbackValue: context.hap.Characteristic.LockTargetState.SECURED,
     });
   }
 
