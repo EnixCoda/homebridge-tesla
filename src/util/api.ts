@@ -1,6 +1,6 @@
 import { Logging } from "homebridge";
 import { EventEmitter } from "./events";
-import { lock } from "./mutex";
+import { withLock } from "./mutex";
 import { getAccessToken } from "./token";
 import { TeslaPluginConfig, Vehicle, VehicleData } from "./types";
 import { wait } from "./wait";
@@ -12,9 +12,6 @@ export interface TeslaApiEvents {
 }
 
 export class TeslaApi extends EventEmitter<TeslaApiEvents> {
-  private log: Logging;
-  private config: TeslaPluginConfig;
-
   // Runtime state.
   private authToken: string | undefined;
   private authTokenExpires: number | undefined;
@@ -30,58 +27,43 @@ export class TeslaApi extends EventEmitter<TeslaApiEvents> {
   // notify event listeners until the last one is completed.
   private commandsRunning = 0;
 
-  constructor(log: Logging, config: TeslaPluginConfig) {
+  constructor(
+    private log: Logging,
+    private config: TeslaPluginConfig,
+  ) {
     super();
-    this.log = log;
-    this.config = config;
   }
 
+  @withLock("getOptions", 20_000)
   getOptions = async ({ ignoreCache }: { ignoreCache?: boolean } = {}): Promise<TeslaJSOptions> => {
-    // Use a mutex to prevent multiple logins happening in parallel.
-    const unlock = await lock("getOptions", 20_000);
+    // First login if we don't have a token.
+    const authToken = await this.getAuthToken();
 
-    if (!unlock) {
-      this.log("Failed to acquire lock for getOptions");
-      throw new Error("Failed to acquire lock for getOptions");
+    // If the cached value is less than 2500ms old, return it.
+    const cacheAge = Date.now() - this.lastOptionsTime;
+
+    if (cacheAge < 2500 && !ignoreCache && this.lastOptions) {
+      // this.log("Using just-cached options data.");
+      return this.lastOptions;
     }
 
-    try {
-      // First login if we don't have a token.
-      const authToken = await this.getAuthToken();
+    // Grab the string ID of your vehicle and the current state.
+    const { id_s: vehicleID, state } = await this.getVehicle();
 
-      // If the cached value is less than 2500ms old, return it.
-      const cacheAge = Date.now() - this.lastOptionsTime;
+    const options = { authToken, vehicleID, isOnline: state === "online" };
 
-      if (cacheAge < 2500 && !ignoreCache && this.lastOptions) {
-        // this.log("Using just-cached options data.");
-        return this.lastOptions;
-      }
+    this.log(`Tesla reports vehicle is ${state}.`);
 
-      // Grab the string ID of your vehicle and the current state.
-      const { id_s: vehicleID, state } = await this.getVehicle();
+    // Cache the state.
+    this.lastOptions = options;
+    this.lastOptionsTime = Date.now();
 
-      const options = { authToken, vehicleID, isOnline: state === "online" };
-
-      this.log(`Tesla reports vehicle is ${state}.`);
-
-      // Cache the state.
-      this.lastOptions = options;
-      this.lastOptionsTime = Date.now();
-
-      return options;
-    } finally {
-      unlock();
-    }
+    return options;
   };
 
+  @withLock("getAuthToken", 20_000)
   getAuthToken = async (): Promise<string> => {
     // Use a mutex to prevent multiple logins happening in parallel.
-    const unlock = await lock("getAuthToken", 20_000);
-
-    if (!unlock) {
-      throw new Error("Failed to acquire lock for getAuthToken");
-    }
-
     try {
       const { config, authToken, authTokenExpires, authTokenError } = this;
       const { refreshToken } = config;
@@ -117,8 +99,6 @@ export class TeslaApi extends EventEmitter<TeslaApiEvents> {
       this.log("Error while getting an access token:", error.message);
       this.authTokenError = error;
       throw error;
-    } finally {
-      unlock();
     }
   };
 
@@ -167,10 +147,10 @@ export class TeslaApi extends EventEmitter<TeslaApiEvents> {
 
     // Wait up to 30 seconds for the car to wake up.
     const start = Date.now();
-    let waitTime = 2000;
+    let waitTime = 2_000;
     const waitMinutes = this.config.waitMinutes || 1;
 
-    while (Date.now() - start < waitMinutes * 60 * 1000) {
+    while (Date.now() - start < waitMinutes * 60 * 1_000) {
       // Poll Tesla for the latest on this vehicle.
       const { state } = await this.getVehicle();
 
@@ -190,76 +170,65 @@ export class TeslaApi extends EventEmitter<TeslaApiEvents> {
     throw new Error(`Vehicle did not wake up within ${waitMinutes} minutes.`);
   };
 
+  @withLock("getVehicleData", 20_000)
   public async getVehicleData({
     ignoreCache,
   }: { ignoreCache?: boolean } = {}): Promise<VehicleData | null> {
-    // Use a mutex to prevent multiple calls happening in parallel.
-    const unlock = await lock("getVehicleData", 20_000);
+    // If the cached value is less than 2500ms old, return it.
+    const cacheAge = Date.now() - this.lastVehicleDataTime;
 
-    if (!unlock) {
-      this.log("Failed to acquire lock for getVehicleData");
-      return null;
+    if (cacheAge < 2500 && !ignoreCache) {
+      // this.log("Using just-cached vehicle data.");
+      return this.lastVehicleData;
     }
 
-    try {
-      // If the cached value is less than 2500ms old, return it.
-      const cacheAge = Date.now() - this.lastVehicleDataTime;
+    const options = await this.getOptions({ ignoreCache });
 
-      if (cacheAge < 2500 && !ignoreCache) {
-        // this.log("Using just-cached vehicle data.");
-        return this.lastVehicleData;
-      }
-
-      const options = await this.getOptions({ ignoreCache });
-
-      if (!options.isOnline) {
-        // If we're ignoring cache, we'll have to return null here.
-        if (ignoreCache) {
-          return null;
-        }
-
-        this.log(
-          `Vehicle is not online; using ${this.lastVehicleData ? "last known" : "default"} state.`,
-        );
-
-        // Set the last update time to now to prevent spamming the logs with the
-        // directly-above message. If the vehicle becomes online, we'll get
-        // called with ignoreCache=true anyway.
-        this.lastVehicleDataTime = Date.now();
-
-        return this.lastVehicleData;
-      }
-
-      // Get the latest data from Tesla.
-      this.log(`Getting latest vehicle data from Tesla${ignoreCache ? " (forced update)" : ""}…`);
-
-      let data: VehicleData;
-
-      try {
-        data = await this.api("vehicleData", options);
-      } catch (error: any) {
-        // Make sure these don't happen too often.
-        this.lastVehicleData = null;
-        this.lastVehicleDataTime = Date.now();
+    if (!options.isOnline) {
+      // If we're ignoring cache, we'll have to return null here.
+      if (ignoreCache) {
         return null;
       }
 
-      this.log("Vehicle data updated.");
+      this.log(
+        `Vehicle is not online; using ${this.lastVehicleData ? "last known" : "default"} state.`,
+      );
 
-      // Cache the state.
-      this.lastVehicleData = data;
+      // Set the last update time to now to prevent spamming the logs with the
+      // directly-above message. If the vehicle becomes online, we'll get
+      // called with ignoreCache=true anyway.
       this.lastVehicleDataTime = Date.now();
 
-      // Notify any listeners unless there is more than one command running
-      // right now.
-      if (this.commandsRunning <= 1) {
-        this.emit("vehicleDataUpdated", data);
-      }
-
-      return data;
-    } finally {
-      unlock();
+      return this.lastVehicleData;
     }
+
+    // Get the latest data from Tesla.
+    this.log(`Getting latest vehicle data from Tesla${ignoreCache ? " (forced update)" : ""}…`);
+
+    let data: VehicleData;
+
+    try {
+      data = await this.api("vehicleData", options);
+    } catch (error: any) {
+      // Make sure these don't happen too often.
+      this.lastVehicleData = null;
+      this.lastVehicleDataTime = Date.now();
+      return null;
+    }
+
+    this.log("Vehicle data updated.");
+
+    // Cache the state.
+    this.lastVehicleData = data;
+    this.lastVehicleDataTime = Date.now();
+
+    // Notify any listeners unless there is more than one command running
+    // right now.
+    if (this.commandsRunning <= 1) {
+      this.emit("vehicleDataUpdated", data);
+    }
+
+    return data;
   }
 
   /**

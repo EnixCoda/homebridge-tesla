@@ -8,6 +8,25 @@ const debug = (...args: any[]) => {
   //console.log(...args);
 };
 
+const lockFn =
+  <Args extends any[], R>(key: string, timeout: number, fn: (...args: Args) => R) =>
+  async (...args: Args) => {
+    const unlock = await lock(key, timeout);
+
+    if (!unlock) throw new Error(`Failed to acquire lock for "${key}"`);
+
+    try {
+      return fn(...args);
+    } finally {
+      unlock();
+    }
+  };
+
+export const withLock = (key: string, timeout: number) => (target: any, propertyKey: string) => {
+  const method = target[propertyKey];
+  target[propertyKey] = lockFn(key, timeout, method);
+};
+
 export async function lock(value: MutexValue, timeout: number): Promise<UnlockFunction | null> {
   debug(`Locking on ${value}`);
 
@@ -66,12 +85,12 @@ export async function lock(value: MutexValue, timeout: number): Promise<UnlockFu
   });
 }
 
-function removeUpTo(array: any[], target: any) {
+function removeUpTo<T>(array: T[], target: T) {
   const index = array.indexOf(target);
   index >= 0 && array.splice(0, index);
 }
 
-function removeUpToAndIncluding(array: any[], target: any) {
+function removeUpToAndIncluding<T>(array: T[], target: T) {
   const index = array.indexOf(target);
   index >= 0 && array.splice(0, index + 1);
 }

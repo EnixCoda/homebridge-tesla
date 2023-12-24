@@ -1,6 +1,6 @@
 import babel from "@rollup/plugin-babel";
-import resolve from "@rollup/plugin-node-resolve";
 import json from "@rollup/plugin-json";
+import resolve from "@rollup/plugin-node-resolve";
 
 const extensions = [".ts", ".js"];
 
@@ -19,6 +19,9 @@ export default {
       extensions,
       exclude: "node_modules/**", // only transpile our source code
       babelHelpers: "bundled",
+      plugins: [
+        ['@babel/plugin-proposal-decorators', { decoratorsBeforeExport: true }],
+      ]
     }),
     json(),
   ],
