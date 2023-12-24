@@ -2,8 +2,12 @@ type Listener = (...args: any[]) => void;
 
 type ListenerArgs<T> = T extends Listener ? Parameters<T> : never;
 
-export class EventEmitter<E> {
-  private events = new Map(); // Can't really make this typesafe.
+export interface ListenerMap {
+  [key: string]: Listener;
+}
+
+export class EventEmitter<E extends ListenerMap> {
+  private events = new Map<keyof E, Set<E[keyof E]>>();
 
   public on<T extends keyof E>(type: T, listener: E[T]) {
     const { events } = this;

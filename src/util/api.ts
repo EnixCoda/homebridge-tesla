@@ -1,5 +1,5 @@
 import { Logging } from "homebridge";
-import { EventEmitter } from "./events";
+import { EventEmitter, ListenerMap } from "./events";
 import { withLock } from "./mutex";
 import { getAccessToken } from "./token";
 import { TeslaPluginConfig, Vehicle, VehicleData } from "./types";
@@ -7,7 +7,7 @@ import { wait } from "./wait";
 
 const teslajs = require("teslajs");
 
-export interface TeslaApiEvents {
+export interface TeslaApiEvents extends ListenerMap {
   vehicleDataUpdated(data: VehicleData): void;
 }
 
