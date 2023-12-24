@@ -11,13 +11,13 @@ export type Trunk = {
   apiName: any;
 };
 
-export const FrontTrunk: Trunk = {
+const FrontTrunk: Trunk = {
   name: "Front Trunk",
   subtype: "frontTrunk",
   apiName: teslajs.FRUNK,
 };
 
-export const RearTrunk: Trunk = {
+const RearTrunk: Trunk = {
   name: "Trunk",
   subtype: "trunk",
   apiName: teslajs.TRUNK,
@@ -105,5 +105,17 @@ export class TrunkService extends TeslaPluginService {
         hap.Characteristic.LockCurrentState.UNSECURED,
       );
     }
+  }
+}
+
+export class FrontTrunkService extends TrunkService {
+  constructor(context: TeslaPluginServiceContext) {
+    super(context, FrontTrunk);
+  }
+}
+
+export class RearTrunkService extends TrunkService {
+  constructor(context: TeslaPluginServiceContext) {
+    super(context, RearTrunk);
   }
 }

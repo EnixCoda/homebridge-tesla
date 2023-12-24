@@ -1,5 +1,5 @@
 require("@babel/polyfill");
-import { API, Logging, PlatformAccessory, PlatformConfig } from "homebridge";
+import { API, Logging, PlatformAccessory, PlatformConfig, Service } from "homebridge";
 import { BatteryService } from "./services/BatteryService";
 import { ChargeLevelService } from "./services/ChargeLevelService";
 import { ChargeLimitService } from "./services/ChargeLimitService";
@@ -15,10 +15,10 @@ import { SentryModeService } from "./services/SentryModeService";
 import { StarterService } from "./services/StarterService";
 import { SteeringWheelHeaterService } from "./services/SteeringWheelHeaterService";
 import { TeslaPluginService, TeslaPluginServiceContext } from "./services/TeslaPluginService";
-import { FrontTrunk, RearTrunk, TrunkService } from "./services/TrunkService";
+import { FrontTrunkService, RearTrunkService } from "./services/TrunkService";
 import { VehicleLockService } from "./services/VehicleLockService";
 import { TeslaApi } from "./util/api";
-import { TeslaPluginConfig, getConfigValue } from "./util/types";
+import { getConfigValue, TeslaPluginConfig } from "./util/types";
 
 const pluginIdentifier = "homebridge-enixcoda-tesla";
 const platformName = "EnixCodaTesla";
@@ -42,8 +42,6 @@ export default function (api: API) {
       this.context = { log, hap: api.hap, config: teslaPluginConfig, tesla };
 
       this.setup(teslaPluginConfig);
-
-      tesla.getVehicleData();
     }
 
     configureAccessory(accessory: PlatformAccessory) {
@@ -73,79 +71,50 @@ export default function (api: API) {
       }
     }
 
+    private enableService(Service: typeof TeslaPluginService, keys?: (keyof TeslaPluginConfig)[]) {
+      if (!keys || keys.every((key) => getConfigValue(this.context.config, key))) {
+        this.addAccessory(new (Service as typeof DummyService)(this.context));
+      }
+    }
+
     private setup(config: TeslaPluginConfig) {
-      const { api, context } = this;
+      this.api.on("didFinishLaunching", () => {
+        const bindings = [
+          [ConnectionService],
+          [BatteryService],
+          [VehicleLockService, ["vehicleLock"]],
+          [RearTrunkService, ["trunk"]],
+          [FrontTrunkService, ["frontTrunk"]],
+          [SteeringWheelHeaterService, ["steeringWheelHeater"]],
+          [ChargeLimitService, ["chargeLimit"]],
+          [ChargeLevelService, ["chargeLevel"]],
+          [ChargePortService, ["chargePort"]],
+          [ChargerService, ["charger"]],
+          [ChargingAmpsService, ["chargingAmps"]],
+          [DefrostService, ["defrost"]],
+          [SentryModeService, ["sentryMode"]],
+          [StarterService, ["starter"]],
+          [HomeLinkService, ["homeLink", "latitude", "longitude"]],
+          [
+            getConfigValue(config, "climateSwitch") ? ClimateSwitchService : ClimateService,
+            ["climate"],
+          ],
+        ] as [typeof TeslaPluginService, (keyof TeslaPluginConfig)[]][];
+        bindings.forEach(([Service, keys]) => this.enableService(Service, keys));
 
-      api.on("didFinishLaunching", () => {
-        this.addAccessory(new ConnectionService(context));
-        this.addAccessory(new BatteryService(context));
-
-        if (getConfigValue(config, "vehicleLock")) {
-          this.addAccessory(new VehicleLockService(context));
-        }
-
-        if (getConfigValue(config, "trunk")) {
-          this.addAccessory(new TrunkService(context, RearTrunk));
-        }
-
-        if (getConfigValue(config, "frontTrunk")) {
-          this.addAccessory(new TrunkService(context, FrontTrunk));
-        }
-
-        if (getConfigValue(config, "climate")) {
-          this.addAccessory(
-            getConfigValue(config, "climateSwitch")
-              ? new ClimateSwitchService(context)
-              : new ClimateService(context),
-          );
-        }
-
-        if (getConfigValue(config, "steeringWheelHeater")) {
-          this.addAccessory(new SteeringWheelHeaterService(context));
-        }
-
-        if (getConfigValue(config, "chargeLimit")) {
-          this.addAccessory(new ChargeLimitService(context));
-        }
-
-        if (getConfigValue(config, "chargeLevel")) {
-          this.addAccessory(new ChargeLevelService(context));
-        }
-
-        if (getConfigValue(config, "chargePort")) {
-          this.addAccessory(new ChargePortService(context));
-        }
-
-        if (getConfigValue(config, "charger")) {
-          this.addAccessory(new ChargerService(context));
-        }
-
-        if (getConfigValue(config, "chargingAmps")) {
-          this.addAccessory(new ChargingAmpsService(context));
-        }
-
-        if (getConfigValue(config, "defrost")) {
-          this.addAccessory(new DefrostService(context));
-        }
-
-        if (getConfigValue(config, "sentryMode")) {
-          this.addAccessory(new SentryModeService(context));
-        }
-
-        if (getConfigValue(config, "starter")) {
-          this.addAccessory(new StarterService(context));
-        }
-
-        if (
-          getConfigValue(config, "homeLink") &&
-          getConfigValue(config, "latitude") &&
-          getConfigValue(config, "longitude")
-        ) {
-          this.addAccessory(new HomeLinkService(context));
-        }
+        this.tesla.getVehicleData();
       });
     }
   }
 
   api.registerPlatform(pluginIdentifier, platformName, TeslaPlatformPlugin);
+
+  class DummyService extends TeslaPluginService {
+    public service: Service;
+    name = "DummyService";
+    constructor(context: TeslaPluginServiceContext) {
+      super(context);
+      throw new Error("DummyService should not be instantiated");
+    }
+  }
 }
