@@ -4,7 +4,7 @@ import { wait } from "../util/wait";
 import { TeslaPluginService, TeslaPluginServiceContext } from "./TeslaPluginService";
 
 export class ChargePortService extends TeslaPluginService {
-  name = "Charge Port";
+  static serviceName = "Charge Port";
   service: Service;
 
   constructor(context: TeslaPluginServiceContext) {

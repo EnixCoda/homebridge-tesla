@@ -4,7 +4,7 @@ import { wait } from "../util/wait";
 import { TeslaPluginService, TeslaPluginServiceContext } from "./TeslaPluginService";
 
 export class VehicleLockService extends TeslaPluginService {
-  name = "Car Doors";
+  static serviceName = "Car Doors";
   service: Service;
 
   constructor(context: TeslaPluginServiceContext) {

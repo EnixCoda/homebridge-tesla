@@ -26,12 +26,11 @@ const RearTrunk: Trunk = {
 export class TrunkService extends TeslaPluginService {
   trunk: Trunk;
   service: Service;
-  name: string;
+  static serviceName = "Trunk";
 
   constructor(context: TeslaPluginServiceContext, trunk: Trunk) {
     super(context);
     this.trunk = trunk;
-    this.name = trunk.name;
 
     this.service = new context.hap.Service.LockMechanism(this.getFullName(), trunk.subtype);
 
@@ -109,12 +108,16 @@ export class TrunkService extends TeslaPluginService {
 }
 
 export class FrontTrunkService extends TrunkService {
+  static serviceName = FrontTrunk.name;
+
   constructor(context: TeslaPluginServiceContext) {
     super(context, FrontTrunk);
   }
 }
 
 export class RearTrunkService extends TrunkService {
+  static serviceName = RearTrunk.name;
+
   constructor(context: TeslaPluginServiceContext) {
     super(context, RearTrunk);
   }

@@ -3,7 +3,7 @@ import { VehicleData } from "../util/types";
 import { TeslaPluginService, TeslaPluginServiceContext } from "./TeslaPluginService";
 
 export class DefrostService extends TeslaPluginService {
-  name = "Defrost";
+  static serviceName = "Defrost";
   service: Service;
 
   constructor(context: TeslaPluginServiceContext) {

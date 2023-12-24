@@ -4,7 +4,7 @@ import { wait } from "../util/wait";
 import { TeslaPluginService, TeslaPluginServiceContext } from "./TeslaPluginService";
 
 export class HomeLinkService extends TeslaPluginService {
-  name = "HomeLink";
+  static serviceName = "HomeLink";
   service: Service;
 
   constructor(context: TeslaPluginServiceContext) {

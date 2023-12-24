@@ -4,7 +4,7 @@ import { TeslaPluginService, TeslaPluginServiceContext } from "./TeslaPluginServ
 
 export class ChargeLevelService extends TeslaPluginService {
   service: Service;
-  name = "Charge Level";
+  static serviceName = "Charge Level";
 
   constructor(context: TeslaPluginServiceContext) {
     super(context);

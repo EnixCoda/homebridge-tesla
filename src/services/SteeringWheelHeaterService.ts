@@ -3,7 +3,7 @@ import { VehicleData } from "../util/types";
 import { TeslaPluginService, TeslaPluginServiceContext } from "./TeslaPluginService";
 
 export class SteeringWheelHeaterService extends TeslaPluginService {
-  name = "Steering Wheel Heater";
+  static serviceName = "Steering Wheel Heater";
   service: Service;
 
   constructor(context: TeslaPluginServiceContext) {

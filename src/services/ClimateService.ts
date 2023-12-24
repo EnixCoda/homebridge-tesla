@@ -1,9 +1,9 @@
 import { CharacteristicValue, Service } from "homebridge";
-import { VehicleData, getConfigValue } from "../util/types";
+import { getConfigValue, VehicleData } from "../util/types";
 import { TeslaPluginService, TeslaPluginServiceContext } from "./TeslaPluginService";
 
 export class ClimateService extends TeslaPluginService {
-  name = "Climate";
+  static serviceName = "Climate";
   service: Service;
 
   constructor(context: TeslaPluginServiceContext) {

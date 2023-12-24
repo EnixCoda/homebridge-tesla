@@ -4,7 +4,7 @@ import { TeslaPluginService, TeslaPluginServiceContext } from "./TeslaPluginServ
 
 export class ChargeLimitService extends TeslaPluginService {
   service: Service;
-  name = "Charge Limit";
+  static serviceName = "Charge Limit";
 
   // We need to set charge limit on a delay because the UX in the Home app is
   // a lightbulb brightness slider that is "realtime" - so we will be told

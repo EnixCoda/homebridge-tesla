@@ -3,7 +3,7 @@ import { VehicleData } from "../util/types";
 import { TeslaPluginService, TeslaPluginServiceContext } from "./TeslaPluginService";
 
 export class SentryModeService extends TeslaPluginService {
-  name = "Sentry Mode";
+  static serviceName = "Sentry Mode";
   service: Service;
 
   constructor(context: TeslaPluginServiceContext) {

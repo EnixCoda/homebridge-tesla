@@ -3,8 +3,9 @@ import { VehicleData } from "../util/types";
 import { TeslaPluginService, TeslaPluginServiceContext } from "./TeslaPluginService";
 
 export class BatteryService extends TeslaPluginService {
+  static serviceName = "Battery";
+
   service: Service;
-  name = "Battery";
 
   constructor(context: TeslaPluginServiceContext) {
     super(context);

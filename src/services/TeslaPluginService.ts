@@ -19,7 +19,7 @@ export type TeslaPluginServiceContext = {
 
 export abstract class TeslaPluginService {
   public abstract readonly service: Service;
-  abstract readonly name: string;
+  static readonly serviceName: string = "TeslaPluginService";
 
   constructor(protected readonly context: TeslaPluginServiceContext) {}
 
@@ -48,7 +48,10 @@ export abstract class TeslaPluginService {
   getFullName(): string {
     // Optional prefix to prepend to all accessory names.
     const prefix = (this.context.config.prefix ?? "").trim();
-    return prefix.length > 0 ? `${prefix} ${this.name}` : this.name;
+    const serviceName =
+      (this.constructor as typeof TeslaPluginService).serviceName ||
+      this.constructor.prototype.serviceName;
+    return prefix.length > 0 ? `${prefix} ${serviceName}` : serviceName;
   }
 
   //

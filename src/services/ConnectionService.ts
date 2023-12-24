@@ -2,7 +2,7 @@ import { Service } from "homebridge";
 import { TeslaPluginService, TeslaPluginServiceContext } from "./TeslaPluginService";
 
 export class ConnectionService extends TeslaPluginService {
-  name = "Connection";
+  static serviceName = "Connection";
   service: Service;
 
   constructor(context: TeslaPluginServiceContext) {

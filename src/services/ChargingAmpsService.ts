@@ -3,7 +3,7 @@ import { VehicleData } from "../util/types";
 import { TeslaPluginService, TeslaPluginServiceContext } from "./TeslaPluginService";
 
 export class ChargingAmpsService extends TeslaPluginService {
-  name = "Charging Amps";
+  static serviceName = "Charging Amps";
   service: Service;
 
   // We need to set charging amps on a delay because the UX in the Home app is
